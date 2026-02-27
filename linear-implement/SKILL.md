@@ -17,7 +17,27 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
 
 ## Process
 
-### 1. Understand the Plan
+### 1. Pull Latest & Create Worktree
+
+**This is mandatory. Never work outside a worktree.**
+
+```bash
+# Pull latest from main
+git checkout main && git pull origin main
+
+# Create a worktree for this feature
+git worktree add .claude/worktrees/<IDENTIFIER> -b <IDENTIFIER>
+
+# Symlink .env.local from the main repo root (required for API keys / Firebase)
+ln -s <main-repo-root>/.env.local .claude/worktrees/<IDENTIFIER>/.env.local
+
+# Switch into the worktree
+cd .claude/worktrees/<IDENTIFIER>
+```
+
+Replace `<IDENTIFIER>` with the issue identifier in lowercase (e.g., `blue-42`). Replace `<main-repo-root>` with the absolute path to the main repository root.
+
+### 2. Understand the Plan
 
 Read the provided implementation plan carefully. Identify:
 - Files to modify or create
@@ -25,7 +45,18 @@ Read the provided implementation plan carefully. Identify:
 - Tests to write or update
 - The issue's team key (from the identifier, e.g., "BLU" from "BLU-42")
 
-### 2. Implement
+### 3. Use Superpowers Skills (if available)
+
+If superpowers skills are available in the environment, use them to guide implementation:
+- **brainstorming** — before creative work (new features, new components, behavioral changes)
+- **test-driven-development** — before writing implementation code
+- **systematic-debugging** — if you encounter bugs or unexpected behavior
+- **verification-before-completion** — before claiming work is done
+- **writing-plans** — if the plan needs further decomposition
+
+Invoke the relevant skill before proceeding. If no superpowers skills are available, continue normally.
+
+### 4. Implement
 
 Execute the plan step by step:
 
@@ -34,7 +65,7 @@ Execute the plan step by step:
 - Keep changes minimal and focused on the issue
 - Write tests for new functionality
 
-### 3. Run Checks
+### 5. Run Checks
 
 After implementation, run the project's checks. Check `package.json` for available scripts:
 
@@ -51,7 +82,7 @@ Fix any errors before proceeding. If checks fail:
 - Fix the root cause (not the symptom)
 - Re-run checks until they pass
 
-### 4. Handle Discoveries
+### 6. Handle Discoveries
 
 If you find bugs, tech debt, or edge cases while implementing that are **outside the scope** of the current issue:
 
@@ -65,7 +96,7 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts create-issue \
 
 Track all created follow-up issues in your summary.
 
-### 5. Update Linear
+### 7. Update Linear
 
 Add an implementation summary comment:
 
@@ -76,7 +107,7 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts add-comment <IDENTIFIER> \
 
 **Do NOT change the issue status to Done.** The orchestrator or user will decide when to close it. Only update status if explicitly asked.
 
-### 6. Return Summary
+### 8. Return Summary
 
 Return to the orchestrator:
 - **What was implemented**: files changed, approach taken

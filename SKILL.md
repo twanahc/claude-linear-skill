@@ -1,6 +1,6 @@
 ---
 name: linear
-description: Use when working with Linear issues — browse backlog, triage, plan implementations, and execute. Orchestrates subagents for context-efficient issue processing.
+description: Use when working with Linear issues — browse backlog, triage, plan implementations, propose improvements, and execute. Orchestrates subagents for context-efficient issue processing.
 ---
 
 # Linear Issue Workflow
@@ -39,18 +39,27 @@ Commands:
 digraph linear_workflow {
     rankdir=TB;
     "User invokes /linear" [shape=doublecircle];
-    "Browse or specific IDs?" [shape=diamond];
+    "Browse, specific, or propose?" [shape=diamond];
     "Spawn linear-triage subagent" [shape=box];
     "User provides issue IDs" [shape=box];
+    "Spawn linear-propose subagent" [shape=box];
+    "Present proposals to user" [shape=box];
+    "User picks proposals to create?" [shape=diamond];
+    "Create Linear issues" [shape=box];
     "For each issue: spawn linear-plan subagent" [shape=box];
     "Present plans to user" [shape=box];
     "User approves plans?" [shape=diamond];
     "For each plan: spawn linear-implement subagent" [shape=box];
     "Summarize results" [shape=doublecircle];
 
-    "User invokes /linear" -> "Browse or specific IDs?";
-    "Browse or specific IDs?" -> "Spawn linear-triage subagent" [label="browse"];
-    "Browse or specific IDs?" -> "User provides issue IDs" [label="specific"];
+    "User invokes /linear" -> "Browse, specific, or propose?";
+    "Browse, specific, or propose?" -> "Spawn linear-triage subagent" [label="browse"];
+    "Browse, specific, or propose?" -> "User provides issue IDs" [label="specific"];
+    "Browse, specific, or propose?" -> "Spawn linear-propose subagent" [label="propose"];
+    "Spawn linear-propose subagent" -> "Present proposals to user";
+    "Present proposals to user" -> "User picks proposals to create?";
+    "User picks proposals to create?" -> "Create Linear issues" [label="yes"];
+    "Create Linear issues" -> "For each issue: spawn linear-plan subagent";
     "Spawn linear-triage subagent" -> "For each issue: spawn linear-plan subagent";
     "User provides issue IDs" -> "For each issue: spawn linear-plan subagent";
     "For each issue: spawn linear-plan subagent" -> "Present plans to user";
@@ -66,6 +75,32 @@ digraph linear_workflow {
 Ask the user:
 - **Browse backlog**: "Let me look through your issues and help you pick" → Spawn a **linear-triage** subagent
 - **Specific issues**: User provides issue IDs (e.g., "BLU-42, BLU-57") → Skip to Step 2
+- **Propose improvements**: "Analyze the codebase and suggest things to add/fix/improve" → Go to Step 1b
+
+### Step 1b: Propose (if "propose" selected)
+
+Spawn a **linear-propose** subagent using the Task tool:
+
+```
+Task tool:
+  subagent_type: general-purpose
+  prompt: |
+    You are a Linear proposal agent. Read and follow the skill instructions at:
+    ~/.claude/skills/linear/linear-propose/SKILL.md
+
+    Team key: <TEAM_KEY>
+    Focus area: <user-specified focus or "broad sweep">
+    Project root: <current working directory>
+
+    The Linear API script is at: ~/.claude/skills/linear/scripts/linear-api.ts
+    Run it with: source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
+```
+
+When the subagent returns proposals:
+1. Present the proposals to the user in a clean table
+2. Ask which proposals to create as Linear issues
+3. For each approved proposal, create a Linear issue using the API script
+4. The user can then optionally proceed to Step 2 (Plan) with the newly created issues
 
 ### Step 2: Plan
 
@@ -110,12 +145,16 @@ Task tool:
     <paste the full plan here>
 
     Project root: <current working directory>
+    Main repo root: <absolute path to main repo root>
 
     The Linear API script is at: ~/.claude/skills/linear/scripts/linear-api.ts
-    Run it with: bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
+    Run it with: source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
+
+    MANDATORY: You MUST pull latest from main and work in a git worktree.
+    Never work directly on main. The skill instructions explain the setup.
 ```
 
-Same parallelism rules as Step 2. Consider using git worktrees for parallel implementations.
+Same parallelism rules as Step 2. Worktrees are mandatory — each implementation subagent creates its own worktree automatically per `linear-implement` Step 1.
 
 ### Step 5: Summary
 
