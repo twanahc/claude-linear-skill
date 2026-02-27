@@ -175,7 +175,7 @@ This keeps the main context clean for processing many issues in one session.
 
 ## Important
 
-- Always confirm with the user before changing issue status in Linear
-- Never auto-close issues — let the user decide when to mark done
+- **Auto-set "In Progress"**: When an issue is selected for planning or implementation, immediately set it to "In Progress" — no confirmation needed. Picking an issue = starting work.
+- **Confirm before closing**: Never auto-close or mark issues "Done" — always let the user decide when to close.
 - If a subagent encounters blockers, surface them to the user immediately
 - Announce write operations (create issue, update status, add comment) before executing them

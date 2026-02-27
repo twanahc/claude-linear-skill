@@ -71,14 +71,16 @@ Write a structured plan in this format:
 
 ### 4. Update Linear
 
-Update the issue status and add a comment:
+**Immediately** set the issue to "In Progress" — do not ask for confirmation. Picking an issue to plan means it's being worked on.
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts update-status <IDENTIFIER> "In Progress"
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts update-status <IDENTIFIER> "In Progress"
 ```
 
+Then add a planning comment:
+
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts add-comment <IDENTIFIER> "Implementation plan created by Claude Code. Summary: <1-2 sentences of what the plan covers>"
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts add-comment <IDENTIFIER> "Implementation plan created by Claude Code. Summary: <1-2 sentences of what the plan covers>"
 ```
 
 ### 5. Return Plan
