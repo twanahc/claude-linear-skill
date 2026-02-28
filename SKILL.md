@@ -25,11 +25,13 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
 
 Commands:
 - `list-teams` — discover teams
+- `list-projects [--team KEY]` — list projects (optionally by team)
 - `list-states --team KEY` — workflow states for a team
 - `list-issues --team KEY --status NAME --assignee NAME --label NAME --limit N`
 - `get-issue IDENTIFIER` — full issue details (e.g., BLU-42)
 - `search-issues <query>` — full-text search
-- `create-issue --title T --team KEY --description D --priority 0-4 --label L`
+- `create-issue --title T --team KEY --description D --priority 0-4 --label L --project P --assignee A --parent ID`
+- `update-issue IDENTIFIER --priority N --assignee A --label L --project P --title T --description D`
 - `update-status IDENTIFIER "State Name"`
 - `add-comment IDENTIFIER "comment body"`
 
@@ -117,7 +119,7 @@ Task tool:
     Project root: <current working directory>
 
     The Linear API script is at: ~/.claude/skills/linear/scripts/linear-api.ts
-    Run it with: bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
+    Run it with: source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
 ```
 
 **Parallelism decision:**

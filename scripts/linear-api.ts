@@ -89,6 +89,28 @@ async function listTeams() {
   console.log(JSON.stringify(data.teams.nodes, null, 2));
 }
 
+async function listProjects(args: string[]) {
+  const team = getFlag(args, "--team");
+
+  const filterClause = team
+    ? `filter: { accessibleTeams: { some: { key: { eq: "${team}" } } } }`
+    : "";
+
+  const data = (await gql(`
+    query {
+      projects(first: 50, ${filterClause} orderBy: updatedAt) {
+        nodes {
+          id name state
+          teams { nodes { key } }
+          createdAt updatedAt
+        }
+      }
+    }
+  `)) as { projects: { nodes: unknown[] } };
+
+  console.log(JSON.stringify(data.projects.nodes, null, 2));
+}
+
 async function listStates(args: string[]) {
   const teamKey = getFlag(args, "--team");
 
@@ -227,10 +249,13 @@ async function createIssue(args: string[]) {
   const teamKey = getFlag(args, "--team");
   const priority = getFlag(args, "--priority");
   const labelName = getFlag(args, "--label");
+  const projectName = getFlag(args, "--project");
+  const assigneeName = getFlag(args, "--assignee");
+  const parentIdentifier = getFlag(args, "--parent");
 
   if (!title || !teamKey) {
     console.error(
-      "Usage: create-issue --title <title> --team <KEY> [--description <desc>] [--priority <0-4>] [--label <name>]"
+      "Usage: create-issue --title <title> --team <KEY> [--description <desc>] [--priority <0-4>] [--label <name>] [--project <name>] [--assignee <name>] [--parent <IDENTIFIER>]"
     );
     process.exit(1);
   }
@@ -268,6 +293,42 @@ async function createIssue(args: string[]) {
     if (labelData.issueLabels.nodes.length > 0) {
       input.labelIds = [labelData.issueLabels.nodes[0].id];
     }
+  }
+
+  if (projectName) {
+    const projectData = (await gql(
+      `query($name: String!) {
+        projects(filter: { name: { containsIgnoreCase: $name } }) { nodes { id name } }
+      }`,
+      { name: projectName }
+    )) as { projects: { nodes: Array<{ id: string; name: string }> } };
+
+    const project = projectData.projects.nodes[0];
+    if (!project) {
+      console.error(`Project "${projectName}" not found.`);
+      process.exit(1);
+    }
+    input.projectId = project.id;
+  }
+
+  if (assigneeName) {
+    const userData = (await gql(
+      `query($name: String!) {
+        users(filter: { name: { containsIgnoreCase: $name } }) { nodes { id name } }
+      }`,
+      { name: assigneeName }
+    )) as { users: { nodes: Array<{ id: string; name: string }> } };
+
+    const user = userData.users.nodes[0];
+    if (!user) {
+      console.error(`User "${assigneeName}" not found.`);
+      process.exit(1);
+    }
+    input.assigneeId = user.id;
+  }
+
+  if (parentIdentifier) {
+    input.parentId = await resolveIssueId(parentIdentifier);
   }
 
   const data = (await gql(
@@ -344,6 +405,93 @@ async function updateStatus(args: string[]) {
   console.log(JSON.stringify(data.issueUpdate, null, 2));
 }
 
+async function updateIssue(args: string[]) {
+  const identifier = args[0];
+  if (!identifier) {
+    console.error(
+      "Usage: update-issue <IDENTIFIER> [--priority 0-4] [--assignee <name>] [--label <name>] [--project <name>] [--title <title>] [--description <desc>]"
+    );
+    process.exit(1);
+  }
+
+  const issueId = await resolveIssueId(identifier);
+  const input: Record<string, unknown> = {};
+
+  const priority = getFlag(args, "--priority");
+  if (priority) input.priority = parseInt(priority);
+
+  const title = getFlag(args, "--title");
+  if (title) input.title = title;
+
+  const description = getFlag(args, "--description");
+  if (description) input.description = description;
+
+  const assigneeName = getFlag(args, "--assignee");
+  if (assigneeName) {
+    const userData = (await gql(
+      `query($name: String!) {
+        users(filter: { name: { containsIgnoreCase: $name } }) { nodes { id name } }
+      }`,
+      { name: assigneeName }
+    )) as { users: { nodes: Array<{ id: string; name: string }> } };
+
+    const user = userData.users.nodes[0];
+    if (!user) {
+      console.error(`User "${assigneeName}" not found.`);
+      process.exit(1);
+    }
+    input.assigneeId = user.id;
+  }
+
+  const labelName = getFlag(args, "--label");
+  if (labelName) {
+    const labelData = (await gql(
+      `query($name: String!) {
+        issueLabels(filter: { name: { eq: $name } }) { nodes { id } }
+      }`,
+      { name: labelName }
+    )) as { issueLabels: { nodes: Array<{ id: string }> } };
+
+    if (labelData.issueLabels.nodes.length > 0) {
+      input.labelIds = [labelData.issueLabels.nodes[0].id];
+    }
+  }
+
+  const projectName = getFlag(args, "--project");
+  if (projectName) {
+    const projectData = (await gql(
+      `query($name: String!) {
+        projects(filter: { name: { containsIgnoreCase: $name } }) { nodes { id } }
+      }`,
+      { name: projectName }
+    )) as { projects: { nodes: Array<{ id: string }> } };
+
+    const project = projectData.projects.nodes[0];
+    if (!project) {
+      console.error(`Project "${projectName}" not found.`);
+      process.exit(1);
+    }
+    input.projectId = project.id;
+  }
+
+  if (Object.keys(input).length === 0) {
+    console.error("No fields to update. Provide at least one --flag.");
+    process.exit(1);
+  }
+
+  const data = (await gql(
+    `mutation($id: String!, $input: IssueUpdateInput!) {
+      issueUpdate(id: $id, input: $input) {
+        success
+        issue { identifier title priority priorityLabel assignee { name } labels { nodes { name } } }
+      }
+    }`,
+    { id: issueId, input }
+  )) as { issueUpdate: { success: boolean; issue: unknown } };
+
+  console.log(JSON.stringify(data.issueUpdate, null, 2));
+}
+
 async function addComment(args: string[]) {
   const identifier = args[0];
   const body = args.slice(1).join(" ");
@@ -374,11 +522,13 @@ const [command, ...args] = process.argv.slice(2);
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   "list-teams": () => listTeams(),
+  "list-projects": listProjects,
   "list-states": listStates,
   "list-issues": listIssues,
   "get-issue": getIssue,
   "search-issues": searchIssues,
   "create-issue": createIssue,
+  "update-issue": updateIssue,
   "update-status": updateStatus,
   "add-comment": addComment,
 };
@@ -388,6 +538,7 @@ if (!command || !commands[command]) {
 
 Commands:
   list-teams                         List all teams
+  list-projects [--team KEY]         List projects (optionally filter by team)
   list-states [--team KEY]           List workflow states
   list-issues [filters]              List issues with filters
     --team KEY                       Filter by team key
@@ -403,6 +554,16 @@ Commands:
     --description DESC               Issue description
     --priority 0-4                   Priority (0=none, 1=urgent, 4=low)
     --label NAME                     Label name
+    --project NAME                   Project name (fuzzy match)
+    --assignee NAME                  Assignee name (fuzzy match)
+    --parent IDENTIFIER              Parent issue (e.g., BLU-10)
+  update-issue <ID> [options]        Update an existing issue
+    --title TITLE                    New title
+    --description DESC               New description
+    --priority 0-4                   New priority
+    --label NAME                     Set label
+    --project NAME                   Set project (fuzzy match)
+    --assignee NAME                  Set assignee (fuzzy match)
   update-status <ID> <STATE>         Update issue workflow state
   add-comment <ID> <body>            Add comment to issue`);
   process.exit(1);

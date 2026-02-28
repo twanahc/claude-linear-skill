@@ -39,15 +39,18 @@ linear/
 │   └── SKILL.md                # Analyze codebase, create implementation plan
 ├── linear-implement/
 │   └── SKILL.md                # Execute plan, run checks, update Linear
+├── linear-propose/
+│   └── SKILL.md                # Scan codebase, suggest improvements as issues
 └── scripts/
     └── linear-api.ts           # GraphQL CLI client (zero dependencies)
 ```
 
-**Orchestrator** delegates to three specialized subagents:
+**Orchestrator** delegates to four specialized subagents:
 
 1. **Triage** — discovers teams, filters issues by status/assignee/label, presents a selection table
-2. **Plan** — fetches issue details, explores the codebase, writes a structured implementation plan, updates Linear status
-3. **Implement** — executes the plan step by step, runs project checks, creates follow-up issues for discovered tech debt
+2. **Propose** — scans the codebase for improvements, bugs, and tech debt; deduplicates against existing issues; returns proposals for the user to approve
+3. **Plan** — fetches issue details, explores the codebase, writes a structured implementation plan, updates Linear status
+4. **Implement** — executes the plan step by step in a git worktree, runs project checks, creates follow-up issues for discovered tech debt
 
 Each subagent runs in its own context window, so the orchestrator stays lean. Independent issues can be planned and implemented in parallel.
 
@@ -78,12 +81,13 @@ Start a Claude Code session and run `/linear`. The orchestrator should ask wheth
 
 ## The API Script
 
-`scripts/linear-api.ts` is a single TypeScript file (~400 lines) with zero external dependencies. It uses native `fetch()` against Linear's GraphQL API. Run it with [Bun](https://bun.sh).
+`scripts/linear-api.ts` is a single TypeScript file with zero external dependencies. It uses native `fetch()` against Linear's GraphQL API. Run it with [Bun](https://bun.sh).
 
 ### Commands
 
 ```
 list-teams                              List all teams
+list-projects [--team KEY]              List projects (optionally by team)
 list-states [--team KEY]                List workflow states
 list-issues [filters]                   List issues with filters
   --team KEY                            Filter by team
@@ -99,6 +103,16 @@ create-issue [options]                  Create a new issue
   --description DESC
   --priority 0-4                        0=none, 1=urgent, 4=low
   --label NAME
+  --project NAME                        Project name (fuzzy match)
+  --assignee NAME                       Assignee name (fuzzy match)
+  --parent IDENTIFIER                   Parent issue for sub-issues
+update-issue <IDENTIFIER> [options]     Update an existing issue
+  --title TITLE                         New title
+  --description DESC                    New description
+  --priority 0-4                        New priority
+  --label NAME                          Set label
+  --project NAME                        Set project (fuzzy match)
+  --assignee NAME                       Set assignee (fuzzy match)
 update-status <IDENTIFIER> <STATE>      Move issue to workflow state
 add-comment <IDENTIFIER> <body>         Add comment to issue
 ```
@@ -127,17 +141,19 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts get-issue ENG-42
   │
   ├─ "Browse my backlog" ──→ Triage subagent ──→ User picks issues
   │                                                      │
-  └─ "Work on ENG-42, ENG-57" ────────────────────────────┘
-                                                          │
-                                              Plan subagent(s)
-                                           (parallel if independent)
-                                                          │
-                                              User reviews plans
-                                                          │
-                                           Implement subagent(s)
-                                           (parallel if independent)
-                                                          │
-                                              Summary of changes
+  ├─ "Suggest improvements" ──→ Propose subagent ──→ User approves ──→ Issues created
+  │                                                                          │
+  └─ "Work on ENG-42, ENG-57" ──────────────────────────────────────────────┘
+                                                                             │
+                                                                 Plan subagent(s)
+                                                              (parallel if independent)
+                                                                             │
+                                                                 User reviews plans
+                                                                             │
+                                                              Implement subagent(s)
+                                                              (parallel if independent)
+                                                                             │
+                                                                 Summary of changes
 ```
 
 ## Customization

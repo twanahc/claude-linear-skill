@@ -20,7 +20,7 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
 ### 1. Fetch Issue Details
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts get-issue <IDENTIFIER>
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts get-issue <IDENTIFIER>
 ```
 
 Parse the response to understand:

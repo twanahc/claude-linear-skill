@@ -43,8 +43,8 @@ Use Glob, Grep, and Read tools to explore. Be thorough but focused.
 Fetch existing issues to avoid proposing duplicates:
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts list-issues --team <KEY> --limit 50
-bun ~/.claude/skills/linear/scripts/linear-api.ts search-issues "<keyword>"
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts list-issues --team <KEY> --limit 50
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts search-issues "<keyword>"
 ```
 
 Skip proposals that overlap with existing issues.

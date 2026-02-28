@@ -20,7 +20,7 @@ bun ~/.claude/skills/linear/scripts/linear-api.ts <command>
 ### 1. Discover Teams
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts list-teams
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts list-teams
 ```
 
 Present teams to the user. Ask which team to focus on (or all).
@@ -93,7 +93,7 @@ Ask the user which issues to work on. They can:
 For each selected issue, fetch complete details:
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts get-issue <IDENTIFIER>
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts get-issue <IDENTIFIER>
 ```
 
 This returns: title, description, comments, relations, parent/children, priority, labels, assignee, dates, URL.

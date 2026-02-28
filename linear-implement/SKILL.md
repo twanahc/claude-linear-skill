@@ -87,7 +87,7 @@ Fix any errors before proceeding. If checks fail:
 If you find bugs, tech debt, or edge cases while implementing that are **outside the scope** of the current issue:
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts create-issue \
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts create-issue \
   --title "Found during <IDENTIFIER>: <brief description>" \
   --team <TEAM_KEY> \
   --priority 3 \
@@ -101,7 +101,7 @@ Track all created follow-up issues in your summary.
 Add an implementation summary comment:
 
 ```bash
-bun ~/.claude/skills/linear/scripts/linear-api.ts add-comment <IDENTIFIER> \
+source ~/.bashrc && bun ~/.claude/skills/linear/scripts/linear-api.ts add-comment <IDENTIFIER> \
   "Implementation complete. Changes: <summary of files changed and what was done>. Tests: <what was tested>. Follow-ups: <any issues created, or 'none'>."
 ```
 

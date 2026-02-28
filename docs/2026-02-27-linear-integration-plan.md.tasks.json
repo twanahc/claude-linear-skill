@@ -1,0 +1,12 @@
+{
+  "planPath": "~/.claude/skills/linear/docs/2026-02-27-linear-integration-plan.md",
+  "tasks": [
+    {"id": 6, "subject": "Task 1: Write the Linear API Script", "status": "pending"},
+    {"id": 7, "subject": "Task 2: Write the Orchestrator Skill (linear/SKILL.md)", "status": "pending", "blockedBy": [6]},
+    {"id": 8, "subject": "Task 3: Write the Triage Skill", "status": "pending", "blockedBy": [6]},
+    {"id": 9, "subject": "Task 4: Write the Plan Skill", "status": "pending", "blockedBy": [6]},
+    {"id": 10, "subject": "Task 5: Write the Implement Skill", "status": "pending", "blockedBy": [6]},
+    {"id": 11, "subject": "Task 6: Test the full workflow end-to-end", "status": "pending", "blockedBy": [6, 7, 8, 9, 10]}
+  ],
+  "lastUpdated": "2026-02-27T00:00:00Z"
+}
